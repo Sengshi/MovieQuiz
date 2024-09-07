@@ -106,7 +106,6 @@ final class MovieQuizViewController: UIViewController {
             correctAnswers += 1
         }
         imageView.layer.masksToBounds = true
-        imageView.layer.borderWidth = 8
         imageView.layer.borderColor = isCorrect ? UIColor.ypGreen.cgColor : UIColor.ypRed.cgColor
         yesButtonClicked.isEnabled = false
         noButtonClicked.isEnabled = false
