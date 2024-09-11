@@ -9,6 +9,7 @@ import UIKit
 
 
 protocol QuestionFactoryProtocol {
+    func setup(delegate: QuestionFactoryDelegate)
     func requestNextQuestion()
 }
 
@@ -60,15 +61,4 @@ class QuestionFactory: QuestionFactoryProtocol {
         let question = questions[safe: index]
         delegate?.didReceiveNextQuestion(question: question)
     }
-    
-//    func requestNextQuestion() -> QuizQuestion? { // 1
-//        // 2
-//        guard let index = (0..<questions.count).randomElement() else {
-//            return nil
-//        }
-//
-//        return questions[safe: index] // 3
-//    }
-
-    
 }

@@ -1,12 +1,10 @@
 import UIKit
 
-
-
 final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - AlertPresenter
     private var alertPresenter: AlertPresenter?
-    
+
     // MARK: - Lifecycle
     
     @IBOutlet private var imageView: UIImageView!
@@ -20,23 +18,27 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     // переменная со счётчиком правильных ответов, начальное значение закономерно 0
     private var correctAnswers = 0
     private let questionsAmount: Int = 10
-    private var questionFactory: QuestionFactoryProtocol?
     private var currentQuestion: QuizQuestion?
-    private var statisticService: StatisticServiceProtocol = StatisticService()
-    
-    
-    
+    private var statisticService: StatisticServiceProtocol
+    private let questionFactory: QuestionFactoryProtocol
+
+    required init?(coder: NSCoder) {
+        // Инициализация зависимостей для работы со сторибордом или XIB
+        self.statisticService = StatisticService()
+        self.questionFactory = QuestionFactory()
+        super.init(coder: coder)
+        // Инициализируем alertPresenter после super.init
+        self.alertPresenter = AlertPresenter(viewController: self)
+        // Устанавливаем делегат для фабрики вопросов
+        self.questionFactory.setup(delegate: self)
+    }
+
     override func viewDidLoad() {
         super.viewDidLoad()
-        alertPresenter = AlertPresenter(viewController: self)
-        statisticService = StatisticService()
         imageView.layer.masksToBounds = true // даём разрешение на рисование рамки
         imageView.layer.borderWidth = 8 // толщина рамки
         imageView.layer.borderColor = UIColor.clear.cgColor // делаем рамку белой
         imageView.layer.cornerRadius = 20 // радиус скругления углов рамки
-        let questionFactory = QuestionFactory()
-        questionFactory.setup(delegate: self)
-        self.questionFactory = questionFactory
         showNextQuestionOrResults()
     }
     
@@ -77,7 +79,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         guard let currentQuestion = currentQuestion else {
             return
         }
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer == true)
+        showAnswerResult(isCorrect: currentQuestion.correctAnswer)
     }
     // Нажатие на "Нет"
     @IBAction private func noButtonTapped(_ sender: Any) {
@@ -85,7 +87,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         guard let currentQuestion = currentQuestion else {
             return
         }
-        showAnswerResult(isCorrect: currentQuestion.correctAnswer == false)
+        showAnswerResult(isCorrect: !currentQuestion.correctAnswer)
     }
     // Сменить цвет рамки в зависимости от точности ответа
     private func showAnswerResult(isCorrect: Bool) {
@@ -121,7 +123,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
             show(quiz: viewModel) // 3
         } else {
             currentQuestionIndex += 1
-            questionFactory?.requestNextQuestion() // Запрос нового вопроса
+            questionFactory.requestNextQuestion() // Запрос нового вопроса
         }
     }
     
@@ -130,19 +132,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         let accuracyText = "Средняя точность: \(String(format: "%.2f", statisticService.totalAccuracy))%"
         let gamesCountText = "Всего игр сыграно: \(statisticService.gamesCount)"
         
-        let message = "\(result.text)\n\(gamesCountText)\n\(bestGameText)\n\(accuracyText)"
+        let message = "\(result.text)\n\(accuracyText)\n\(gamesCountText)\n\(bestGameText)"
         
-        let alert = UIAlertController(
+        let model = AlertModel(
             title: result.title,
             message: message,
-            preferredStyle: .alert
+            buttonText: result.buttonText,
+            completion: { [weak self] in
+                self?.restartQuiz()
+            }
         )
         
-        alert.addAction(UIAlertAction(title: result.buttonText, style: .default, handler: { [weak self] _ in
-            self?.restartQuiz()
-        }))
-        
-        present(alert, animated: true, completion: nil)
+        alertPresenter?.showAlert(with: model)
     }
     
     // Перезапустить игру
