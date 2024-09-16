@@ -10,6 +10,11 @@ import Foundation
 struct MostPopularMovies: Codable {
     let errorMessage: String
     let items: [MostPopularMovie]
+    
+    // Проверка на наличие ошибки
+    var hasError: Bool {
+        return !errorMessage.isEmpty
+    }
 }
 
 struct MostPopularMovie: Codable {
@@ -18,8 +23,8 @@ struct MostPopularMovie: Codable {
     let imageURL: URL
     
     private enum CodingKeys: String, CodingKey {
-    case title = "fullTitle"
-    case rating = "imDbRating"
-    case imageURL = "image"
+        case title = "fullTitle"
+        case rating = "imDbRating"
+        case imageURL = "image"
     }
 }

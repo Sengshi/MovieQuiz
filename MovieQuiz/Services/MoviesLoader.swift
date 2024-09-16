@@ -30,15 +30,25 @@ struct MoviesLoader: MoviesLoading {
             switch result {
             case .success(let data):
                 do {
+                    // Попытка декодирования данных
                     let mostPopularMovies = try JSONDecoder().decode(MostPopularMovies.self, from: data)
-                    handler(.success(mostPopularMovies))
+                    
+                    // Проверка на наличие ошибки в ответе
+                    if mostPopularMovies.hasError || mostPopularMovies.items.isEmpty {
+                        let errorMessage = mostPopularMovies.errorMessage.isEmpty ? "Список фильмов пуст." : mostPopularMovies.errorMessage
+                        let error = NSError(domain: "", code: 1, userInfo: [NSLocalizedDescriptionKey: errorMessage])
+                        handler(.failure(error))
+                    } else {
+                        handler(.success(mostPopularMovies))
+                    }
                 } catch {
+                    // Обработка ошибки декодирования
                     handler(.failure(error))
                 }
             case .failure(let error):
+                // Обработка сетевых ошибок
                 handler(.failure(error))
             }
         }
     }
 }
-

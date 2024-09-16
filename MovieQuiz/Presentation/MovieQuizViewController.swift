@@ -4,7 +4,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - AlertPresenter
     private var alertPresenter: AlertPresenter?
-
+    
     // MARK: - Lifecycle
     
     @IBOutlet private var imageView: UIImageView!
@@ -23,7 +23,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     private let statisticService: StatisticServiceProtocol
     private let questionFactory: QuestionFactoryProtocol
-
+    
     required init?(coder: NSCoder) {
         // Инициализация зависимостей
         self.statisticService = StatisticService()
@@ -37,6 +37,7 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         setupUI()
+        setupActivityIndicator()
         showLoadingIndicator()
         questionFactory.loadData()
     }
@@ -47,12 +48,23 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
         imageView.layer.borderColor = UIColor.clear.cgColor
         imageView.layer.cornerRadius = 20
     }
-
+    
+    private func setupActivityIndicator() {
+        activityIndicator.hidesWhenStopped = true
+    }
+    
     // MARK: - QuestionFactoryDelegate
     
     func didReceiveNextQuestion(question: QuizQuestion?) {
         guard let question = question else {
             print("Ошибка: не удалось получить следующий вопрос.")
+            return
+        }
+        
+        if question.image.isEmpty {
+            DispatchQueue.main.async { [weak self] in
+                self?.showNetworkError(message: "Не удалось получить изображение для вопроса.")
+            }
             return
         }
         
@@ -153,28 +165,18 @@ final class MovieQuizViewController: UIViewController, QuestionFactoryDelegate {
     
     // MARK: - Loading Indicator
     
-    func didLoadDataFromServer() {
-        hideLoadingIndicator()
-        questionFactory.requestNextQuestion()
-    }
-
-    func didFailToLoadData(with error: Error) {
-        showNetworkError(message: "Невозможно загрузить данные")
-    }
-    
     private func showLoadingIndicator() {
         DispatchQueue.main.async { [weak self] in
-            self?.activityIndicator.isHidden = false
             self?.activityIndicator.startAnimating()
         }
     }
     
     private func hideLoadingIndicator() {
         DispatchQueue.main.async { [weak self] in
-            self?.activityIndicator.isHidden = true
-            self?.activityIndicator.startAnimating()
+            self?.activityIndicator.stopAnimating()
         }
     }
+    
     private func showNetworkError(message: String) {
         hideLoadingIndicator()
         
